@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+import argparse
+
+import rospy
+
+import actionlib
+import control_msgs.msg
+from trajectory_msgs.msg import JointTrajectoryPoint
+
+
+def follow_joint_trajectory_action_client(name, joint_names, joint_positions):
+    rospy.init_node("set_joint_position", anonymous=True)
+    assert len(joint_names) == len(joint_positions)
+    rospy.loginfo("Sending {}".format(zip(joint_names, joint_positions)))
+
+    client = actionlib.SimpleActionClient(name, control_msgs.msg.FollowJointTrajectoryAction)
+    rospy.loginfo("Waiting for {}".format(name))
+    client.wait_for_server()
+
+    # Creates a goal to send to the action server.
+    goal = control_msgs.msg.FollowJointTrajectoryGoal()
+    goal.trajectory.joint_names = joint_names
+    goal.trajectory.points.append(JointTrajectoryPoint(positions=joint_positions))
+
+    return client.send_goal_and_wait(goal)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--joint_positions", type=float, help="The desired user IO state", nargs='+', required=True)
+parser.add_argument("--joint_names", default=["shoulder_joint", "upperArm_joint", "foreArm_joint", "wrist1_joint",
+                                              "wrist2_joint", "wrist3_joint"], nargs='+')
+args = parser.parse_args()
+print follow_joint_trajectory_action_client("follow_joint_trajectory", args.joint_names, args.joint_positions)

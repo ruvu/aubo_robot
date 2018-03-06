@@ -22,7 +22,7 @@ AuboDriver::AuboDriver(std::string ip, int port, double rate)
   // Set-up ROS IO
   ros::NodeHandle nh;
   action_server_ = std::shared_ptr<ActionServerType>(
-        new ActionServerType(nh, "arm_controller/follow_joint_trajectory",
+        new ActionServerType(nh, "follow_joint_trajectory",
                              boost::bind(&AuboDriver::executeCallback, this, _1), false));
   joint_state_publisher_ = nh.advertise<sensor_msgs::JointState>("joint_states", 300);
   robot_status_publisher_ = nh.advertise<industrial_msgs::RobotStatus>("robot_status", 100);
