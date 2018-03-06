@@ -5,10 +5,20 @@
 
 namespace aubo_driver {
 
-const std::string JOINT_NAMES[ARM_DOF] = {"shoulder_joint", "upperArm_joint", "foreArm_joint",
-                                          "wrist1_joint", "wrist2_joint", "wrist3_joint"};
+const std::string JOINT_NAMES[aubo_robot_namespace::ARM_DOF] = {"shoulder_joint", "upperArm_joint", "foreArm_joint",
+                                                                "wrist1_joint", "wrist2_joint", "wrist3_joint"};
 
-AuboDriver::AuboDriver(std::string ip, int port, double rate)
+aubo_robot_namespace::JointVelcAccParam getJointVelAccParam(float value)
+{
+  aubo_robot_namespace::JointVelcAccParam param;
+  for (size_t i = 0; i < aubo_robot_namespace::ARM_DOF; ++i)
+  {
+    param.jointPara[i] = value;
+  }
+  return param;
+}
+
+AuboDriver::AuboDriver(std::string ip, int port, double rate, double max_joint_velocity, double max_joint_acceleration)
 {
   ROS_INFO("Connecting to %s:%d", ip.c_str(), port);
 
@@ -17,6 +27,12 @@ AuboDriver::AuboDriver(std::string ip, int port, double rate)
   if(return_code != aubo_robot_namespace::InterfaceCallSuccCode)
   {
     std::runtime_error("Failed to connect to robot on " + ip + ":" + std::to_string(port));
+  }
+  return_code += robot_service_.robotServiceSetGlobalMoveJointMaxVelc(getJointVelAccParam(max_joint_velocity));
+  return_code += robot_service_.robotServiceSetGlobalMoveJointMaxAcc(getJointVelAccParam(max_joint_acceleration));
+  if(return_code != aubo_robot_namespace::InterfaceCallSuccCode)
+  {
+    std::runtime_error("Failed to set velocities and accelerations for robot");
   }
 
   // Set-up ROS IO
@@ -50,17 +66,17 @@ void AuboDriver::executeCallback(const control_msgs::FollowJointTrajectoryGoalCo
     return;
   }
   const trajectory_msgs::JointTrajectoryPoint& point = goal->trajectory.points.back();
-  if (point.positions.size() != ARM_DOF || goal->trajectory.joint_names.size() != ARM_DOF) {
-    ROS_ERROR("Trajectort joint names and positions per point should be of length 6");
+  if (point.positions.size() != aubo_robot_namespace::ARM_DOF || goal->trajectory.joint_names.size() != aubo_robot_namespace::ARM_DOF) {
+    ROS_ERROR("Trajectory joint names and positions per point should be of length 6");
     action_server_->setAborted();
     return;
   }
 
-  double targetPoint[ARM_DOF];
-  for (size_t i = 0; i < ARM_DOF; ++i)
+  double targetPoint[aubo_robot_namespace::ARM_DOF];
+  for (size_t i = 0; i < aubo_robot_namespace::ARM_DOF; ++i)
   {
     bool found = false;
-    for (size_t j = 0; j < ARM_DOF; ++j)
+    for (size_t j = 0; j < aubo_robot_namespace::ARM_DOF; ++j)
     {
       if (JOINT_NAMES[i] == goal->trajectory.joint_names[j])
       {
@@ -93,17 +109,17 @@ void AuboDriver::timerCallback(const ros::TimerEvent& e)
 {
   {
     // Obtain joint status
-    aubo_robot_namespace::JointStatus joint_status[ARM_DOF];
-    if (robot_service_.robotServiceGetRobotJointStatus(joint_status, ARM_DOF) != aubo_robot_namespace::InterfaceCallSuccCode) {
+    aubo_robot_namespace::JointStatus joint_status[aubo_robot_namespace::ARM_DOF];
+    if (robot_service_.robotServiceGetRobotJointStatus(joint_status, aubo_robot_namespace::ARM_DOF) != aubo_robot_namespace::InterfaceCallSuccCode) {
       throw std::runtime_error("Failed to obtain joint state");
     }
 
     // Publish the joint state message
     sensor_msgs::JointState joint_state_msg;
     joint_state_msg.header.stamp = ros::Time::now();
-    joint_state_msg.name.resize(ARM_DOF);
-    joint_state_msg.position.resize(ARM_DOF);
-    for(size_t i = 0; i < ARM_DOF; i++)
+    joint_state_msg.name.resize(aubo_robot_namespace::ARM_DOF);
+    joint_state_msg.position.resize(aubo_robot_namespace::ARM_DOF);
+    for(size_t i = 0; i < aubo_robot_namespace::ARM_DOF; i++)
     {
       joint_state_msg.name[i] = JOINT_NAMES[i];
       joint_state_msg.position[i] = joint_status[i].jointPosJ;
@@ -158,7 +174,9 @@ int main(int argc, char **argv)
   {
     AuboDriver driver(local_nh.param("ip", std::string("192.168.1.34")),
                       local_nh.param("port", 8899),
-                      local_nh.param("rate", 50));
+                      local_nh.param("rate", 50),
+                      local_nh.param("max_joint_velocity", 0.5),
+                      local_nh.param("max_joint_acceleration", 2));
     ros::spin();
   }
   catch (const std::exception& e)

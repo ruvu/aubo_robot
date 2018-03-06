@@ -19,6 +19,7 @@
   <depend>aubo_msgs</depend>
   <depend>actionlib</depend>
   <depend>control_msgs</depend>
+  <depend>industrial_msgs</depend>
 
   <test_depend>rospy</test_depend>
 </package>

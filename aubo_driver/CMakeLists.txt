@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   aubo_msgs
+  industrial_msgs
   actionlib
 )
 

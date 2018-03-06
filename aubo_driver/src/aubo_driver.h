@@ -14,7 +14,6 @@
 #include <actionlib/server/simple_action_server.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 
-#define ARM_DOF 6
 
 namespace aubo_driver
 {
@@ -23,7 +22,7 @@ typedef actionlib::SimpleActionServer<control_msgs::FollowJointTrajectoryAction>
 class AuboDriver
 {
 public:
-  AuboDriver(std::string ip, int port, double rate);
+  AuboDriver(std::string ip, int port, double rate, double max_joint_velocity, double max_joint_acceleration);
   ~AuboDriver();
 
 private:
