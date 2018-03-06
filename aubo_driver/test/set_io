@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+import argparse
+
+import rospy
+from aubo_msgs.srv import SetIO
+
+
+def set_user_io(name, pin, state):
+    rospy.loginfo("Waiting for service {}".format(name))
+    rospy.wait_for_service(name)
+    try:
+        print rospy.ServiceProxy(name, SetIO)(fun=1, pin=pin, state=state)
+    except rospy.ServiceException, e:
+        rospy.logerr("Service call failed: {}".format(e))
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("pin", type=int, help="The user IO pin")
+parser.add_argument("state", type=int, help="The desired user IO state")
+args = parser.parse_args()
+set_user_io("set_io", args.pin, args.state)
