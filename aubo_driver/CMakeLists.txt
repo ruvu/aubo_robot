@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS include
   CATKIN_DEPENDS sensor_msgs roscpp std_msgs aubo_msgs actionlib
 )
 
