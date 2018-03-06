@@ -23,30 +23,28 @@ typedef actionlib::SimpleActionServer<control_msgs::FollowJointTrajectoryAction>
 class AuboDriver
 {
 public:
-  AuboDriver(std::string ip, int port, double rate, double io_flag_delay);
+  AuboDriver(std::string ip, int port, double rate);
   ~AuboDriver();
 
 private:
   // Aubo robot interfaces
   ServiceInterface robot_service_;
 
-  //
+  // ROS Publishers
   ros::Publisher joint_state_publisher_;
   ros::Publisher robot_status_publisher_;
-  ros::Publisher io_publisher_;
 
+  // ROS Actionserver for controlling the robot
   std::shared_ptr<ActionServerType> action_server_;
   void executeCallback(const control_msgs::FollowJointTrajectoryGoalConstPtr& goal);
 
+  // Request state timer
   void timerCallback(const ros::TimerEvent& e);
-  void publishIOMsg();
-
   ros::Timer get_robot_state_timer_;
 
+  // ROS Service server to set io
   ros::ServiceServer io_srv_;
   bool setIO(aubo_msgs::SetIORequest& req, aubo_msgs::SetIOResponse& resp);
-
-  ros::Duration io_flag_delay_;
 };
 
 }
